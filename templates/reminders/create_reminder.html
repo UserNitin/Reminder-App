@@ -1,0 +1,399 @@
+{% extends "reminders/base.html" %}
+
+{% block title %}Create Reminder{% endblock %}
+
+{% block extra_head %}
+<style>
+  body {
+    margin: auto;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow: auto;
+    background: linear-gradient(315deg, rgba(101,0,94,1) 3%, rgba(60,132,206,1) 38%, rgba(48,238,226,1) 68%, rgba(255,25,25,1) 98%);
+    animation: gradient 15s ease infinite;
+    background-size: 400% 400%;
+    background-attachment: fixed;
+  }
+  @keyframes gradient {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+  }
+  .wave {
+    background: rgb(255 255 255 / 25%);
+    border-radius: 1000% 1000% 0 0;
+    position: fixed;
+    width: 200%;
+    height: 12em;
+    animation: wave 10s -3s linear infinite;
+    transform: translate3d(0, 0, 0);
+    opacity: 0.8;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+  }
+  .wave:nth-of-type(2) {
+    bottom: -1.25em;
+    animation: wave 18s linear reverse infinite;
+    opacity: 0.8;
+  }
+  .wave:nth-of-type(3) {
+    bottom: -2.5em;
+    animation: wave 20s -1s reverse infinite;
+    opacity: 0.9;
+  }
+  @keyframes wave {
+    2% { transform: translateX(1);}
+    25% { transform: translateX(-25%);}
+    50% { transform: translateX(-50%);}
+    75% { transform: translateX(-25%);}
+    100% { transform: translateX(1);}
+  }
+  .center-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .custom-calendar-card {
+    background: rgba(255,255,255,0.97);
+    border-radius: 28px;
+    box-shadow: 0 8px 32px 0 rgba(60,132,206,0.18), 0 1.5px 8px 0 rgba(255,178,0,0.08);
+    padding: 2.8rem 2.2rem 2.2rem 2.2rem;
+    width: 380px;
+    position: relative;
+    text-align: left;
+    border: none;
+    transition: box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .custom-calendar-card form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .input-field {
+    margin-bottom: 1.5rem;
+    text-align: left;
+    width: 100%;
+  }
+  .input-field input, .input-field textarea, .input-field select {
+    border-radius: 8px;
+    border: 1px solid #e0e7ef;
+    background: #f9fafb;
+    font-size: 1.08rem;
+    padding: 0.5rem 0.8rem;
+    width: 100%;
+    margin-top: 0.2rem;
+    transition: border 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+  }
+  .input-field label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2d6cdf;
+    margin-bottom: 0.2rem;
+    display: block;
+  }
+  .calendar-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2d6cdf;
+    margin-bottom: 0.7rem;
+    display: block;
+    text-align: left;
+    letter-spacing: 0.5px;
+    margin-top: 0.5rem;
+  }
+  .date-input-btn, .time-input-btn {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #e0e7ef;
+    background: #f9fafb;
+    font-size: 1.08rem;
+    padding: 0.5rem 0.8rem;
+    text-align: left;
+    cursor: pointer;
+    color: #222;
+    margin-top: 0.2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    transition: border 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+  .date-input-btn:after {
+    content: "\1F4C5";
+    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Android Emoji", Emoji, sans-serif;
+    font-size: 1.2rem;
+    color: #ffb200;
+    pointer-events: none;
+    margin-left: 8px;
+  }
+  .time-input-btn:after {
+    content: "\23F0";
+    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Android Emoji", Emoji, sans-serif;
+    font-size: 1.2rem;
+    color: #2d6cdf;
+    pointer-events: none;
+    margin-left: 8px;
+  }
+  .calendar-popup, .time-popup {
+    display: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0 auto;
+    z-index: 10;
+    background: #fff;
+    border-radius: 22px;
+    box-shadow: 0 8px 32px 0 rgba(60,132,206,0.18);
+    padding: 1.2rem 1.2rem 1rem 1.2rem;
+    width: 320px;
+    animation: fadeIn 0.2s;
+    border: 1px solid #e0e7ef;
+  }
+  .calendar-popup { top: 120px; }
+  .time-popup { top: 320px; padding: 0; border-radius: 12px; overflow: hidden; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px);}
+    to { opacity: 1; transform: translateY(0);}
+  }
+  .calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.1rem;
+  }
+  .calendar-header .calendar-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #2d6cdf;
+    text-align: left;
+    letter-spacing: 0.5px;
+  }
+  .calendar-header .calendar-icon {
+    background: linear-gradient(135deg, #ffb200 60%, #ff9900 100%);
+    color: #fff;
+    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    flex-direction: column;
+    margin-left: 10px;
+    box-shadow: 0 2px 8px #ffb20033;
+  }
+  .calendar-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.7rem;
+  }
+  .calendar-controls select {
+    border: none;
+    background: #f6f4ee;
+    border-radius: 8px;
+    padding: 0.3rem 0.8rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2d6cdf;
+    outline: none;
+    margin-right: 0.2rem;
+    box-shadow: 0 1px 4px #e0e7ef44;
+    transition: background 0.2s;
+  }
+  .calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.1rem;
+  }
+  .calendar-table th, .calendar-table td {
+    text-align: center;
+  }
+  .calendar-table th {
+    color: #ffb200;
+    font-weight: 700;
+    padding: 0.3rem 0;
+    font-size: 1rem;
+    background: none;
+    border: none;
+    letter-spacing: 0.5px;
+  }
+  .calendar-table td {
+    padding: 0.38rem 0;
+    font-size: 1.08rem;
+    color: #222;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.18s, color 0.18s;
+    width: 14.28%;
+  }
+  .calendar-table td.inactive {
+    color: #ccc;
+    cursor: default;
+  }
+  .calendar-table td.selected {
+    background: linear-gradient(90deg, #ffb200 60%, #ff9900 100%);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 8px #ffb20033;
+  }
+  .calendar-table td:hover:not(.inactive):not(.selected) {
+    background: #ffe6a1;
+    color: #222;
+  }
+  .calendar-confirm-btn {
+    background: linear-gradient(90deg, #2d6cdf 60%, #48e6d8 100%);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 0.7rem 0;
+    width: 100%;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-top: 0.7rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: 0 2px 8px #2d6cdf33;
+    letter-spacing: 0.5px;
+  }
+  .calendar-confirm-btn:hover {
+    background: linear-gradient(90deg, #174a8b 60%, #2d6cdf 100%);
+  }
+  .scroll-time-popup {
+    display: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0 auto;
+    z-index: 10;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px 0 rgba(60,132,206,0.18);
+    padding: 1.2rem 1.2rem 1rem 1.2rem;
+    width: 320px;
+    animation: fadeIn 0.2s;
+    border: 1px solid #e0e7ef;
+    top: 320px;
+    overflow: hidden;
+  }
+  .scroll-time-header {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2d6cdf;
+    margin-bottom: 1rem;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+  .scroll-time-selectors {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.2rem;
+    margin-bottom: 1.2rem;
+  }
+  .scroll-time-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 70px;
+    height: 140px;
+    overflow-y: scroll;
+    scrollbar-width: thin;
+    scrollbar-color: #2d6cdf #f5f7fa;
+    background: #f5f7fa;
+    border-radius: 12px;
+    border: 1px solid #e0e7ef;
+    scroll-snap-type: y mandatory;
+  }
+  .scroll-time-value {
+    font-size: 1.5rem;
+    color: #1976d2;
+    padding: 0.5rem 0;
+    cursor: pointer;
+    text-align: center;
+    width: 100%;
+    scroll-snap-align: center;
+    transition: background 0.2s, color 0.2s;
+    border-radius: 8px;
+  }
+  .scroll-time-value.selected {
+    background: #1976d2;
+    color: #fff;
+    font-weight: 700;
+  }
+  .scroll-time-colon {
+    font-size: 2.2rem;
+    color: #888;
+    align-self: center;
+    margin: 0 0.2rem;
+  }
+  .scroll-time-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    margin-top: 1.2rem;
+  }
+  .scroll-time-action-btn {
+    background: none;
+    border: none;
+    color: #1976d2;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.2rem 0.7rem;
+    transition: color 0.2s;
+    letter-spacing: 1px;
+  }
+  .scroll-time-action-btn:hover {
+    color: #0d47a1;
+  }
+  .scroll-time-ampm {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-left: 0.5rem;
+  }
+  .scroll-time-ampm-btn {
+    border: none;
+    background: #f5f7fa;
+    color: #1976d2;
+    font-weight: 700;
+    font-size: 1.1rem;
+    border-radius: 8px;
+    width: 48px;
+    height: 36px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .scroll-time-ampm-btn.selected {
+    background: #1976d2;
+    color: #fff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="center-container">
+  <div class="custom-calendar-card">
+    <form method="post" id="reminder-form" autocomplete="off">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="calendar-confirm-btn" style="margin-top:0.5rem;">Set Reminder</button>
+    </form>
+  </div>
+</div>
+<div class="wave"></div>
+<div class="wave"></div>
+<div class="wave"></div>
+{% endblock %}
